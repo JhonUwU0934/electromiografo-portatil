@@ -40,6 +40,9 @@ UDP_PORT = int(os.environ.get("EMG_UDP_PORT", 5005))
 WINDOW_SEC = 20
 BUFFER_SIZE = FS * WINDOW_SEC
 
+SNAPSHOT_SEC = 5                  # histórico que se envía al cliente nuevo (acotado: el snapshot de 20 s pasa 1 MB y rompe el WS por el túnel)
+SNAPSHOT_N = FS * SNAPSHOT_SEC
+
 SAMPLES_PER_PACKET = 25
 PACKET_FMT = "<I I H {}h".format(SAMPLES_PER_PACKET)
 PACKET_SIZE = struct.calcsize(PACKET_FMT)
@@ -126,8 +129,8 @@ async def broadcaster():
         filt, state.pending_filt = state.pending_filt, []
         payload = json.dumps({
             "type": "chunk",
-            "raw": raw,
-            "filt": filt,
+            "raw": [int(v) for v in raw],
+            "filt": [round(v, 3) for v in filt],
             "lost": state.lost,
             "status": state.status(),
             "mode": SOURCE,
@@ -184,14 +187,16 @@ async def health():
 async def ws_endpoint(ws: WebSocket):
     await ws.accept()
     # snapshot inicial para que el cliente nuevo arranque con la ventana llena
+    snap_raw = list(state.raw)[-SNAPSHOT_N:]
+    snap_filt = list(state.filt)[-SNAPSHOT_N:]
     await ws.send_text(json.dumps({
         "type": "init",
         "fs": FS,
         "window_max": WINDOW_SEC,
         "samples_per_packet": SAMPLES_PER_PACKET,
         "mode": SOURCE,
-        "raw": list(state.raw),
-        "filt": list(state.filt),
+        "raw": [int(v) for v in snap_raw],
+        "filt": [round(v, 3) for v in snap_filt],
     }))
     state.clients.add(ws)
     try:
