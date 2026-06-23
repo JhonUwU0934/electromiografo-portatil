@@ -170,7 +170,8 @@ async def lifespan(app: FastAPI):
             transport.close()
 
 
-app = FastAPI(title="EMG Web", lifespan=lifespan)
+# docs/openapi deshabilitados: superficie pública read-only de demo, sin necesidad de Swagger
+app = FastAPI(title="EMG Web", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 
 @app.get("/")
