@@ -57,57 +57,46 @@
   // ---------- canvas helpers ----------
   function fit(canvas) {
     const r = canvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     canvas.width = Math.max(1, r.width * dpr);
     canvas.height = Math.max(1, r.height * dpr);
     const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     return { w: r.width, h: r.height, ctx };
   }
-  function grid(ctx, w, h) {
-    const step = 28;
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = COL.grid;
-    ctx.beginPath();
-    for (let x = (w % step) / 2; x < w; x += step) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
-    for (let y = (h % step) / 2; y < h; y += step) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
-    ctx.stroke();
-    ctx.strokeStyle = COL.gridMaj;
-    ctx.beginPath();
-    ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2);
-    ctx.stroke();
-  }
+  // La retícula ahora es CSS (background del contenedor): cero costo por frame.
   function trace(ctx, data, w, h, color, baseFrac, ampFrac, glow) {
     const base = h * baseFrac;
-    if (glow) { ctx.shadowColor = color; ctx.shadowBlur = 7; }
-    ctx.lineWidth = 1.4; ctx.strokeStyle = color; ctx.lineJoin = "round";
-    ctx.beginPath();
-    for (let i = 0; i < data.length; i++) {
-      const x = (i / (data.length - 1)) * w;
-      const y = base - data[i] * h * ampFrac;
-      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    const n = data.length;
+    ctx.lineJoin = "round";
+    // glow barato: trazo ancho translúcido debajo (sin shadowBlur, que es lo caro)
+    if (glow) {
+      ctx.globalAlpha = 0.2; ctx.lineWidth = 4; ctx.strokeStyle = color;
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * w, y = base - data[i] * h * ampFrac; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+      ctx.stroke(); ctx.globalAlpha = 1;
     }
+    ctx.lineWidth = 1.4; ctx.strokeStyle = color;
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * w, y = base - data[i] * h * ampFrac; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
     ctx.stroke();
-    ctx.shadowBlur = 0;
-    // leading-edge dot (persistencia de fósforo, sin bloom)
-    const lx = w, ly = base - data[data.length - 1] * h * ampFrac;
-    ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 10;
-    ctx.beginPath(); ctx.arc(lx - 1, ly, 2, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    // leading dot sólido (sin shadowBlur)
+    const ly = base - data[n - 1] * h * ampFrac;
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(w - 1, ly, 1.8, 0, Math.PI * 2); ctx.fill();
   }
 
   // ---------- scopes registrados ----------
   const scopes = [];
   function register(canvas, model, kind) {
     if (!canvas) return null;
-    const s = { canvas, model, kind, dim: fit(canvas) };
-    model.resize(Math.round(s.dim.w * 0.9));
+    const s = { canvas, model, kind, dim: fit(canvas), visible: true };
+    model.resize(Math.round(s.dim.w * 0.6));
     scopes.push(s);
     return s;
   }
   function render(s) {
     const { ctx, w, h } = s.dim;
     ctx.clearRect(0, 0, w, h);
-    grid(ctx, w, h);
     if (s.kind === "raw") {
       trace(ctx, s.model.raw, w, h, COL.raw, 0.5, 0.4, false);
     } else if (s.kind === "env") {
@@ -133,10 +122,18 @@
 
   const models = [heroM, demoM, sigM, ctaM];
 
+  // sólo animar/dibujar los canvases visibles (1-2 activos a la vez en vez de 5 siempre)
+  const vio = new IntersectionObserver((ents) => {
+    ents.forEach((e) => { const s = scopes.find((x) => x.canvas === e.target); if (s) s.visible = e.isIntersecting; });
+  }, { rootMargin: "120px" });
+  scopes.forEach((s) => vio.observe(s.canvas));
+
   // ---------- loop ----------
   function frame() {
-    for (const m of models) m.step();
-    for (const s of scopes) render(s);
+    for (const m of models) m._vis = false;
+    for (const s of scopes) if (s.visible) s.model._vis = true;
+    for (const m of models) if (m._vis) m.step();
+    for (const s of scopes) if (s.visible) render(s);
     requestAnimationFrame(frame);
   }
   if (REDUCE) {
@@ -147,7 +144,7 @@
   }
 
   window.addEventListener("resize", () => {
-    for (const s of scopes) { s.dim = fit(s.canvas); s.model.resize(Math.round(s.dim.w * 0.9)); }
+    for (const s of scopes) { s.dim = fit(s.canvas); s.model.resize(Math.round(s.dim.w * 0.6)); }
     if (REDUCE) for (const s of scopes) render(s);
   });
 

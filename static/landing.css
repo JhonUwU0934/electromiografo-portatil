@@ -27,6 +27,12 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --maxw: 1160px;
+
+  /* retícula de osciloscopio como CSS (sin redibujar en canvas cada frame) */
+  --grat:
+    linear-gradient(to bottom, transparent calc(50% - 0.5px), rgba(255, 255, 255, 0.10) calc(50% - 0.5px), rgba(255, 255, 255, 0.10) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+    repeating-linear-gradient(to right, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 28px);
 }
 
 * { box-sizing: border-box; }
@@ -74,7 +80,7 @@ strong { font-weight: 600; color: var(--text); }
   position: fixed; top: 0; left: 0; right: 0; z-index: 40;
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
   padding: 16px clamp(18px, 4vw, 48px);
-  background: rgba(10, 14, 18, 0.72); backdrop-filter: blur(10px);
+  background: rgba(9, 13, 17, 0.94);
   border-bottom: 1px solid var(--hairline);
 }
 .brand { display: inline-flex; align-items: center; gap: 9px; font-family: var(--font-mono); font-size: 15px; letter-spacing: 0.04em; }
@@ -102,7 +108,8 @@ strong { font-weight: 600; color: var(--text); }
 /* ---------- HERO ---------- */
 .hero {
   position: relative; min-height: 100vh; display: flex; align-items: center;
-  background: var(--well); overflow: hidden; border-bottom: 1px solid var(--hairline);
+  background-color: var(--well); background-image: var(--grat);
+  overflow: hidden; border-bottom: 1px solid var(--hairline);
 }
 .scope-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; display: block; }
 .hero-glow {
@@ -133,9 +140,9 @@ strong { font-weight: 600; color: var(--text); }
 .scope-badges { position: absolute; z-index: 3; display: flex; flex-direction: column; gap: 8px; }
 .scope-badges--left { left: clamp(18px, 4vw, 48px); bottom: 96px; }
 .scope-badges--right { right: clamp(18px, 4vw, 48px); top: 50%; transform: translateY(-50%); align-items: flex-end; }
-.chip { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--text); background: rgba(17, 23, 28, 0.8); border: 1px solid var(--hairline); border-radius: 5px; padding: 6px 11px; display: inline-flex; align-items: center; gap: 7px; backdrop-filter: blur(4px); }
+.chip { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--text); background: rgba(17, 23, 28, 0.94); border: 1px solid var(--hairline); border-radius: 5px; padding: 6px 11px; display: inline-flex; align-items: center; gap: 7px; }
 .chip-muted { color: var(--muted); }
-.readout { background: rgba(17, 23, 28, 0.82); border: 1px solid var(--hairline); border-radius: 7px; padding: 9px 13px; min-width: 132px; text-align: right; backdrop-filter: blur(4px); }
+.readout { background: rgba(17, 23, 28, 0.94); border: 1px solid var(--hairline); border-radius: 7px; padding: 9px 13px; min-width: 132px; text-align: right; }
 .ro-label { display: block; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.16em; color: var(--muted); }
 .ro-val { font-family: var(--font-mono); font-size: 19px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .ro-val i { font-style: normal; font-size: 11px; color: var(--muted); margin-left: 3px; }
@@ -171,7 +178,7 @@ h2.center { margin-bottom: 14px; }
 
 /* demo card */
 .demo-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 16px; }
-.demo-scope { background: var(--well); border: 1px solid var(--hairline); border-radius: 8px; height: 220px; overflow: hidden; margin-bottom: 14px; }
+.demo-scope { background-color: var(--well); background-image: var(--grat); border: 1px solid var(--hairline); border-radius: 8px; height: 220px; overflow: hidden; margin-bottom: 14px; }
 .demo-scope canvas { width: 100%; height: 100%; display: block; }
 .demo-hint { font-size: 12.5px; color: var(--muted); text-align: center; margin: 12px 0 0; }
 
@@ -193,7 +200,7 @@ h2.center { margin-bottom: 14px; }
 .sig-tab.is-active { background: var(--surface-2); color: var(--text); }
 .sig-tab.is-active[data-state="contraccion"] { color: var(--amber); }
 .sig-lanes { display: grid; gap: 10px; }
-.sig-lane { position: relative; background: #070b0e; border: 1px solid var(--hairline); border-radius: 8px; height: 120px; overflow: hidden; }
+.sig-lane { position: relative; background-color: #070b0e; background-image: var(--grat); border: 1px solid var(--hairline); border-radius: 8px; height: 120px; overflow: hidden; }
 .sig-lane canvas { width: 100%; height: 100%; display: block; }
 .lane-tag { position: absolute; top: 8px; left: 10px; z-index: 2; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
 .sig-readouts { display: flex; gap: 12px; margin-top: 14px; }
@@ -238,7 +245,7 @@ h2.dark { color: var(--ink); margin-bottom: 36px; }
 .val-credit span { color: var(--text); }
 
 /* ---------- CTA FINAL ---------- */
-.cta-final { position: relative; overflow: hidden; background: var(--well); padding: clamp(70px, 11vw, 130px) clamp(18px, 4vw, 48px); text-align: center; border-top: 1px solid var(--hairline); }
+.cta-final { position: relative; overflow: hidden; background-color: var(--well); background-image: var(--grat); padding: clamp(70px, 11vw, 130px) clamp(18px, 4vw, 48px); text-align: center; border-top: 1px solid var(--hairline); }
 .cta-final::before { content: ""; position: absolute; inset: 0; z-index: 2; background: radial-gradient(ellipse 62% 75% at 50% 50%, rgba(6, 9, 12, 0.88), transparent 76%); pointer-events: none; }
 .cta-final .wrap { position: relative; z-index: 3; }
 .cta-final h2 { font-size: clamp(28px, 5vw, 50px); }
