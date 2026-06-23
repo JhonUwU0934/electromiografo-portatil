@@ -1,0 +1,18 @@
+[Unit]
+Description=EMG Web (electromiografo) - FastAPI + UDP bridge
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/emgweb
+Environment=EMG_SOURCE=fake
+Environment=EMG_WEB_HOST=0.0.0.0
+Environment=EMG_WEB_PORT=8000
+Environment=EMG_UDP_PORT=5005
+ExecStart=/home/ubuntu/emgweb/.venv/bin/python -m uvicorn server:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

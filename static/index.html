@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EMG Web — Electromiógrafo</title>
+  <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.31/dist/uPlot.min.css" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Señal EMG <span class="sub">— Electromiógrafo portátil</span></h1>
+    <div class="badges">
+      <span id="mode-badge" class="badge mode-fake">EMULADOR</span>
+      <span id="status-badge" class="badge status-bad">SIN SEÑAL</span>
+      <span id="lost-badge" class="badge badge-muted">Perdidos: 0</span>
+      <span id="conn-badge" class="badge badge-muted">WS: conectando…</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="plot-wrap">
+      <div id="plot"></div>
+      <div class="measure" id="measure">Δt: ---&nbsp;s&nbsp;&nbsp;|&nbsp;&nbsp;ΔV: ---</div>
+    </section>
+
+    <aside class="panel">
+      <h2>Controles</h2>
+
+      <label class="chk"><input type="checkbox" id="chk-raw" checked /> <span class="dot dot-raw"></span> Mostrar Raw</label>
+      <label class="chk"><input type="checkbox" id="chk-filt" checked /> <span class="dot dot-filt"></span> Mostrar Filtrada</label>
+      <label class="chk"><input type="checkbox" id="chk-cursors" checked /> Cursores de medición</label>
+
+      <div class="ctrl">
+        <div class="ctrl-label"><span>Ventana</span><b id="lbl-window">20 s</b></div>
+        <input type="range" id="sld-window" min="1" max="20" value="20" />
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-label"><span>Ganancia</span><b id="lbl-gain">x1</b></div>
+        <input type="range" id="sld-gain" min="1" max="10" value="1" />
+      </div>
+
+      <hr />
+
+      <h2>Cursores</h2>
+      <p class="hint">Arrastrá las líneas sobre la gráfica:</p>
+      <ul class="legend">
+        <li><span class="line cyan"></span> t1 (tiempo)</li>
+        <li><span class="line magenta"></span> t2 (tiempo)</li>
+        <li><span class="line green"></span> y1 (amplitud)</li>
+        <li><span class="line yellow"></span> y2 (amplitud)</li>
+      </ul>
+
+      <hr />
+      <h2>Conexión del ESP32</h2>
+      <p class="hint" id="esp-hint">El ESP32 debe enviar UDP a este servidor (puerto 5005).</p>
+    </aside>
+  </main>
+
+  <script src="https://unpkg.com/uplot@1.6.31/dist/uPlot.iife.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
