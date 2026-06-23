@@ -274,8 +274,7 @@ h2.dark { color: var(--ink); margin-bottom: 36px; }
   .specs { grid-template-columns: repeat(2, 1fr); }
   .cards { grid-template-columns: repeat(2, 1fr); }
   .val-stats { grid-template-columns: 1fr; }
-  .scope-badges--right { display: none; }
-  .scope-badges--left { bottom: 86px; }
+  .scope-badges--right, .scope-badges--left { display: none; }
 }
 @media (max-width: 560px) {
   .specs, .cards { grid-template-columns: 1fr; }
