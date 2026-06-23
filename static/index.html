@@ -3,62 +3,255 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EMG Web — Electromiógrafo</title>
-  <link rel="stylesheet" href="https://unpkg.com/uplot@1.6.31/dist/uPlot.min.css" />
-  <link rel="stylesheet" href="/static/style.css" />
+  <title>Electromiógrafo portátil — Monitoreo muscular en tiempo real</title>
+  <meta name="description" content="Prototipo de electromiógrafo portátil de bajo costo: capta la señal del músculo, la filtra y la transmite por Wi-Fi a una interfaz web en tiempo real. Tesis de Bioingeniería, Universidad Santiago de Cali." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" />
+  <link rel="stylesheet" href="/static/landing.css" />
 </head>
 <body>
-  <header class="topbar">
-    <h1>Señal EMG <span class="sub">— Electromiógrafo portátil</span></h1>
-    <div class="badges">
-      <span id="mode-badge" class="badge mode-fake">EMULADOR</span>
-      <span id="status-badge" class="badge status-bad">SIN SEÑAL</span>
-      <span id="lost-badge" class="badge badge-muted">Perdidos: 0</span>
-      <span id="conn-badge" class="badge badge-muted">WS: conectando…</span>
+  <!-- LOADER -->
+  <div id="loader">
+    <div class="loader-inner">
+      <div class="loader-trace"><span></span></div>
+      <div class="loader-pct"><span id="loader-num">000</span><i>%</i></div>
+      <div class="loader-label">INICIALIZANDO INSTRUMENTO</div>
     </div>
+  </div>
+
+  <!-- NAV -->
+  <header class="nav">
+    <a class="brand" href="#top">
+      <i class='bx bx-pulse'></i><span>EMG<b>WEB</b></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#que-es">Qué es</a>
+      <a href="#pipeline">Cómo funciona</a>
+      <a href="#senales">La señal</a>
+      <a href="#cifras">Cifras</a>
+    </nav>
+    <a class="btn btn-primary btn-sm" href="/monitor"><i class='bx bx-line-chart'></i> Monitor en vivo</a>
   </header>
 
-  <main class="layout">
-    <section class="plot-wrap">
-      <div id="plot"></div>
-      <div class="measure" id="measure">Δt: ---&nbsp;s&nbsp;&nbsp;|&nbsp;&nbsp;ΔV: ---</div>
-    </section>
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <canvas class="scope-canvas" id="hero-scope"></canvas>
+    <div class="hero-glow"></div>
+    <div class="grain"></div>
 
-    <aside class="panel">
-      <h2>Controles</h2>
-
-      <label class="chk"><input type="checkbox" id="chk-raw" checked /> <span class="dot dot-raw"></span> Mostrar Raw</label>
-      <label class="chk"><input type="checkbox" id="chk-filt" checked /> <span class="dot dot-filt"></span> Mostrar Filtrada</label>
-      <label class="chk"><input type="checkbox" id="chk-cursors" checked /> Cursores de medición</label>
-
-      <div class="ctrl">
-        <div class="ctrl-label"><span>Ventana</span><b id="lbl-window">20 s</b></div>
-        <input type="range" id="sld-window" min="1" max="20" value="20" />
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="led"></span> ELECTROMIÓGRAFO PORTÁTIL · TESIS DE BIOINGENIERÍA</p>
+        <h1>La actividad eléctrica de tus músculos, <em>visible</em> en tiempo real.</h1>
+        <p class="subhead">Un prototipo portátil de bajo costo capta la señal del músculo, la filtra y la transmite por Wi-Fi a esta interfaz — para ver y medir, de forma objetiva, la contracción muscular tras la estimulación eléctrica.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="/monitor"><i class='bx bx-pulse'></i> Ver el monitor en vivo</a>
+          <button class="btn btn-ghost" id="flex-btn"><i class='bx bx-bolt-circle'></i> Flexiona el músculo</button>
+        </div>
       </div>
+    </div>
 
-      <div class="ctrl">
-        <div class="ctrl-label"><span>Ganancia</span><b id="lbl-gain">x1</b></div>
-        <input type="range" id="sld-gain" min="1" max="10" value="1" />
+    <div class="scope-badges scope-badges--left">
+      <div class="chip"><span class="dot dot-raw"></span> CH1 · sEMG</div>
+      <div class="chip chip-muted">BÍCEPS BRAQUIAL</div>
+    </div>
+    <div class="scope-badges scope-badges--right">
+      <div class="readout"><span class="ro-label">REPOSO</span><span class="ro-val">68<i>µV</i></span></div>
+      <div class="readout"><span class="ro-label">CONTRACCIÓN</span><span class="ro-val">920<i>mV</i></span></div>
+      <div class="readout"><span class="ro-label">GANANCIA</span><span class="ro-val">×13.529</span></div>
+    </div>
+
+    <div class="strip">
+      <span><i class='bx bx-radio-circle-marked'></i> MUESTREO 2 kSa/s</span>
+      <span>CH1 ACTIVO</span>
+      <span>BANDA 20–450 Hz</span>
+      <span class="strip-live"><span class="led led-amber"></span> MODO DEMO · EMULADOR</span>
+    </div>
+  </section>
+
+  <!-- QUÉ ES -->
+  <section class="section" id="que-es">
+    <div class="wrap two-col reveal">
+      <div>
+        <p class="eyebrow"><span class="led"></span> QUÉ ES UN EMG</p>
+        <h2>Cuando un músculo se contrae, sus fibras disparan pequeños voltajes.</h2>
+        <p class="lead">La <strong>electromiografía (EMG)</strong> los capta con electrodos sobre la piel y los convierte en una señal que se puede ver, medir y comparar — sin pinchazos, de forma no invasiva.</p>
+        <ul class="micro">
+          <li><i class='bx bx-body'></i> <span><b>El músculo</b> genera la actividad eléctrica al contraerse.</span></li>
+          <li><i class='bx bx-bolt-circle'></i> <span><b>Los electrodos</b> captan ese voltaje en la superficie.</span></li>
+          <li><i class='bx bx-show'></i> <span><b>La interfaz</b> lo hace visible y cuantificable.</span></li>
+        </ul>
       </div>
+      <div class="demo-card">
+        <div class="demo-scope">
+          <canvas id="demo-scope"></canvas>
+        </div>
+        <button class="btn btn-ghost btn-block" id="demo-btn"><i class='bx bx-bolt-circle'></i> Contrae el puño</button>
+        <p class="demo-hint">Pulsá para inyectar una contracción y mirá cómo responde la señal.</p>
+      </div>
+    </div>
+  </section>
 
-      <hr />
+  <!-- PIPELINE -->
+  <section class="section section-alt" id="pipeline">
+    <div class="wrap reveal">
+      <p class="eyebrow center"><span class="led"></span> CÓMO VIAJA LA SEÑAL</p>
+      <h2 class="center">Del músculo a tu pantalla, en milisegundos.</h2>
+      <div class="pipeline">
+        <div class="pl-track"><div class="pl-pulse" id="pl-pulse"></div></div>
+        <div class="pl-node">
+          <span class="pl-num">01</span>
+          <div class="pl-ico"><i class='bx bx-body'></i></div>
+          <h3>Músculo</h3>
+          <p>El bíceps se contrae y dispara voltaje.</p>
+        </div>
+        <div class="pl-node">
+          <span class="pl-num">02</span>
+          <div class="pl-ico"><i class='bx bx-been-here'></i></div>
+          <h3>Electrodos</h3>
+          <p>Ag/AgCl captan la señal en la piel.</p>
+        </div>
+        <div class="pl-node">
+          <span class="pl-num">03</span>
+          <div class="pl-ico"><i class='bx bx-microchip'></i></div>
+          <h3>Circuito analógico</h3>
+          <p>Amplifica (doble diferencial) y filtra.</p>
+        </div>
+        <div class="pl-node">
+          <span class="pl-num">04</span>
+          <div class="pl-ico"><i class='bx bx-wifi'></i></div>
+          <h3>ESP32</h3>
+          <p>Digitaliza y transmite por Wi-Fi.</p>
+        </div>
+        <div class="pl-node">
+          <span class="pl-num">05</span>
+          <div class="pl-ico"><i class='bx bx-laptop'></i></div>
+          <h3>Interfaz web</h3>
+          <p>Filtra y dibuja la señal en vivo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-      <h2>Cursores</h2>
-      <p class="hint">Arrastrá las líneas sobre la gráfica:</p>
-      <ul class="legend">
-        <li><span class="line cyan"></span> t1 (tiempo)</li>
-        <li><span class="line magenta"></span> t2 (tiempo)</li>
-        <li><span class="line green"></span> y1 (amplitud)</li>
-        <li><span class="line yellow"></span> y2 (amplitud)</li>
-      </ul>
+  <!-- LA SEÑAL: CRUDA VS ENVOLVENTE -->
+  <section class="section" id="senales">
+    <div class="wrap reveal">
+      <p class="eyebrow center"><span class="led"></span> LA SEÑAL QUE VAS A VER</p>
+      <h2 class="center">Dos trazas, dos estados musculares.</h2>
+      <p class="lead center narrow">La <strong style="color:var(--raw)">señal cruda</strong> es la actividad eléctrica bruta del músculo. La <strong style="color:var(--amber)">envolvente</strong> es su versión filtrada: muestra la intensidad de la contracción de un vistazo.</p>
 
-      <hr />
-      <h2>Conexión del ESP32</h2>
-      <p class="hint" id="esp-hint">El ESP32 debe enviar UDP a este servidor (puerto 5005).</p>
-    </aside>
-  </main>
+      <div class="signal-panel">
+        <div class="sig-toggle" role="tablist">
+          <button class="sig-tab is-active" data-state="reposo"><i class='bx bx-minus'></i> Reposo</button>
+          <button class="sig-tab" data-state="contraccion"><i class='bx bx-trending-up'></i> Contracción</button>
+        </div>
+        <div class="sig-lanes">
+          <div class="sig-lane">
+            <span class="lane-tag"><span class="dot dot-raw"></span> CRUDA</span>
+            <canvas id="lane-raw"></canvas>
+          </div>
+          <div class="sig-lane">
+            <span class="lane-tag"><span class="dot dot-filt"></span> ENVOLVENTE</span>
+            <canvas id="lane-env"></canvas>
+          </div>
+        </div>
+        <div class="sig-readouts">
+          <div class="readout"><span class="ro-label">AMPLITUD PICO-A-PICO</span><span class="ro-val" id="sig-amp">68<i>µV</i></span></div>
+          <div class="readout"><span class="ro-label">ESTADO</span><span class="ro-val" id="sig-state">REPOSO</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <script src="https://unpkg.com/uplot@1.6.31/dist/uPlot.iife.min.js"></script>
-  <script src="/static/app.js"></script>
+  <!-- CIFRAS (BANDA CLARA / DATASHEET) -->
+  <section class="section section-light" id="cifras">
+    <div class="wrap reveal">
+      <p class="eyebrow light"><span class="led"></span> RESULTADOS MEDIDOS</p>
+      <h2 class="dark">Las cifras del prototipo.</h2>
+      <div class="specs">
+        <div class="spec"><div class="spec-num"><span data-count="68">0</span><i>µV</i></div><div class="spec-lbl">Amplitud en <b>reposo</b> (pico a pico)</div></div>
+        <div class="spec"><div class="spec-num"><span data-count="920">0</span><i>mV</i></div><div class="spec-lbl">Amplitud en <b>contracción</b> (pico a pico)</div></div>
+        <div class="spec"><div class="spec-num">×<span data-count="13529">0</span></div><div class="spec-lbl">Diferencia entre <b>reposo y contracción</b></div></div>
+        <div class="spec"><div class="spec-num"><span data-count="2000">0</span><i>Hz</i></div><div class="spec-lbl">Frecuencia de <b>muestreo</b> del ESP32</div></div>
+        <div class="spec"><div class="spec-num">20–450<i>Hz</i></div><div class="spec-lbl">Banda <b>EMG procesada</b></div></div>
+        <div class="spec"><div class="spec-num"><i class='bx bx-wifi'></i></div><div class="spec-lbl">Transporte <b>Wi-Fi / UDP</b> al servidor</div></div>
+      </div>
+      <div class="dsp">
+        <span class="dsp-title"><i class='bx bx-filter-alt'></i> Procesamiento de la señal</span>
+        <div class="dsp-chain">
+          <span class="dsp-step">Notch 50 Hz</span><i class='bx bx-chevron-right'></i>
+          <span class="dsp-step">Pasa-banda 20–450 Hz</span><i class='bx bx-chevron-right'></i>
+          <span class="dsp-step">Rectificación</span><i class='bx bx-chevron-right'></i>
+          <span class="dsp-step">Envolvente 10 Hz</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CASOS DE USO -->
+  <section class="section" id="usos">
+    <div class="wrap reveal">
+      <p class="eyebrow center"><span class="led"></span> PARA QUÉ SIRVE</p>
+      <h2 class="center">Una herramienta accesible para muchos contextos.</h2>
+      <div class="cards">
+        <div class="card"><i class='bx bx-walk'></i><h3>Rehabilitación</h3><p>Seguimiento objetivo de la recuperación muscular tras electroterapia.</p></div>
+        <div class="card"><i class='bx bx-dumbbell'></i><h3>Ciencias del deporte</h3><p>Medir activación y fatiga muscular durante el ejercicio.</p></div>
+        <div class="card"><i class='bx bx-body'></i><h3>Prótesis e interfaces</h3><p>Control de dispositivos a partir de la señal muscular.</p></div>
+        <div class="card"><i class='bx bx-book-open'></i><h3>Educación</h3><p>Enseñar bioseñales con un equipo de bajo costo y abierto.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VALIDACIÓN / ACADEMIA -->
+  <section class="section section-alt" id="validacion">
+    <div class="wrap reveal">
+      <p class="eyebrow center"><span class="led"></span> RIGOR ACADÉMICO</p>
+      <h2 class="center">Validado con metodología, no con promesas.</h2>
+      <p class="lead center narrow">Pruebas con voluntarios sanos sobre el <strong>bíceps braquial</strong>, en reposo y contracción isométrica, siguiendo el posicionamiento estándar <strong>SENIAM</strong> de electromiografía de superficie.</p>
+      <div class="val-stats">
+        <div class="val-stat"><span class="vs-num">Doble<br>diferencial</span><span class="vs-lbl">Configuración del electrodo activo</span></div>
+        <div class="val-stat"><span class="vs-num">5</span><span class="vs-lbl">Etapas de acondicionamiento analógico</span></div>
+        <div class="val-stat"><span class="vs-num">INA128<br>OP07 · TL072</span><span class="vs-lbl">Amplificadores del front-end</span></div>
+      </div>
+      <p class="val-credit">Universidad Santiago de Cali · Facultad de Ingeniería · Programa de Bioingeniería · 2026<br>
+      <span>Laura Daniela Caicedo Arango · Miguel Ángel Chica Gutiérrez</span></p>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="cta-final reveal">
+    <canvas class="scope-canvas" id="cta-scope"></canvas>
+    <div class="grain"></div>
+    <div class="wrap">
+      <h2>Mirá la señal moverse en vivo.</h2>
+      <p>El monitor abre el osciloscopio en tiempo real, con sus controles, cursores de medición y estado de la señal.</p>
+      <a class="btn btn-primary btn-lg" href="/monitor"><i class='bx bx-pulse'></i> Abrir el monitor en vivo</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="strip strip-footer">
+      <span><i class='bx bx-pulse'></i> EMGWEB</span>
+      <span>CH1 · 2 kSa/s</span>
+      <span>BUILD 2026</span>
+      <span class="strip-live"><span class="led led-cyan"></span> SERVIDOR ACTIVO</span>
+    </div>
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="#top"><i class='bx bx-pulse'></i><span>EMG<b>WEB</b></span></a>
+        <p class="foot-copy">Interfaz web del prototipo de electromiógrafo portátil. Tesis de Bioingeniería — Universidad Santiago de Cali, 2026.</p>
+      </div>
+      <div class="foot-links">
+        <a href="/monitor"><i class='bx bx-line-chart'></i> Monitor en vivo</a>
+        <a href="https://github.com/JhonUwU0934/electromiografo-portatil" target="_blank" rel="noopener"><i class='bx bx-code-alt'></i> Repositorio</a>
+        <a href="#que-es"><i class='bx bx-info-circle'></i> Cómo funciona</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/landing.js"></script>
 </body>
 </html>

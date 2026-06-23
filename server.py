@@ -176,7 +176,14 @@ app = FastAPI(title="EMG Web", lifespan=lifespan, docs_url=None, redoc_url=None,
 
 @app.get("/")
 async def index():
+    # landing con contexto (qué es, cómo funciona, qué se ve)
     return FileResponse(os.path.join(HERE, "static", "index.html"))
+
+
+@app.get("/monitor")
+async def monitor():
+    # osciloscopio en vivo
+    return FileResponse(os.path.join(HERE, "static", "monitor.html"))
 
 
 @app.get("/health")
